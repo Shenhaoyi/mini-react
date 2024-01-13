@@ -37,5 +37,14 @@ function render(node, container) {
 
 const appVNode = createElement('div', { id: 'app' }, 'app');
 
-const root = document.getElementById('root');
-render(appVNode, root);
+const ReactDOM = {
+  createRoot(root) {
+    return {
+      render: function (app) {
+        render(app, root);
+      },
+    };
+  },
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(appVNode);
