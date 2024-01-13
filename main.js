@@ -14,7 +14,7 @@ function createElement(type, props, ...children) {
     type,
     props: {
       ...props,
-      children,
+      children: children.map((child) => (typeof child === 'string' ? createTextNode(child) : child)),
     },
   };
 }
@@ -35,8 +35,7 @@ function render(node, container) {
   props.children.forEach((child) => render(child, dom));
 }
 
-const textVNode = createTextNode('app');
-const appVNode = createElement('div', { id: 'app' }, textVNode);
+const appVNode = createElement('div', { id: 'app' }, 'app');
 
 const root = document.getElementById('root');
 render(appVNode, root);
