@@ -1,6 +1,8 @@
+const TEXT_NODE = 'TEXT_NODE';
+
 function createTextNode(text) {
   return {
-    type: 'TEXT_NODE',
+    type: TEXT_NODE,
     props: {
       text,
       children: [],
@@ -17,11 +19,24 @@ function createElement(type, props, ...children) {
   };
 }
 
+function render(node, container) {
+  const { type, props } = node;
+  // 1、创建 dom 节点
+  const dom = type === TEXT_NODE ? document.createTextNode(props.text) : document.createElement(type);
+  // 2、添加属性
+  Object.keys(node).forEach((key) => {
+    if (key !== 'children') {
+      dom[key] = props[key];
+    }
+  });
+  // 3、挂载节点
+  container.appendChild(dom);
+  // 4、递归挂载子节点
+  props.children.forEach((child) => render(child, dom));
+}
+
 const textVNode = createTextNode('app');
 const appVNode = createElement('div', { id: 'app' }, textVNode);
 
-const app = document.createElement(appVNode.type);
 const root = document.getElementById('root');
-root.appendChild(app);
-const text = document.createTextNode(textVNode.props.text);
-app.appendChild(text);
+render(appVNode, root);
