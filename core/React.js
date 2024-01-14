@@ -44,25 +44,24 @@ function render(node, container) {
   fiberLoop();
 }
 
-function performUnitOfFiber(fiber) {
+function createDom(fiber) {
   const { type, props } = fiber;
-  if (!fiber.dom) {
-    // 1、创建 dom 节点
-    const dom = type === TEXT_NODE ? document.createTextNode(props.text) : document.createElement(type);
-    fiber.dom = dom;
-    // 2、添加属性
-    Object.keys(fiber).forEach((key) => {
-      if (key !== 'children') {
-        dom[key] = props[key];
-      }
-    });
-    // 3、挂载节点
-    fiber.parent.dom.appendChild(dom);
-  }
+  return type === TEXT_NODE ? document.createTextNode(props.text) : document.createElement(type);
+}
 
-  // 4、先序遍历挂载
+function updateProps(fiber) {
+  const { props, dom } = fiber;
+  // 2、添加属性
+  Object.keys(props).forEach((key) => {
+    if (key !== 'children') {
+      dom[key] = props[key];
+    }
+  });
+}
+
+function initChildren(fiber) {
   let sibling = null;
-  props.children.forEach((child, index) => {
+  fiber.props.children.forEach((child, index) => {
     const childFiber = {
       ...child,
       parent: fiber,
@@ -75,6 +74,17 @@ function performUnitOfFiber(fiber) {
     }
     sibling = childFiber;
   });
+}
+
+function performUnitOfFiber(fiber) {
+  if (!fiber.dom) {
+    const dom = (fiber.dom = createDom(fiber));
+    updateProps(fiber);
+    fiber.parent.dom.appendChild(dom);
+  }
+
+  initChildren(fiber);
+
   if (fiber.child) {
     return fiber.child;
   } else if (fiber.sibling) {
