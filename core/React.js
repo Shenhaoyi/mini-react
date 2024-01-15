@@ -10,13 +10,23 @@ function createTextNode(text) {
   };
 }
 function createElement(type, props, ...children) {
-  return {
-    type,
-    props: {
+  const isFunctionComponent = typeof type === 'function';
+  if (isFunctionComponent) {
+    return type({
       ...props,
-      children: children.map((child) => (typeof child === 'string' ? createTextNode(child) : child)),
-    },
-  };
+      children,
+    });
+  } else
+    return {
+      type,
+      props: {
+        ...props,
+        children: children.map((child) => {
+          const isTextNode = ['string', 'number'].includes(typeof child);
+          return isTextNode ? createTextNode(String(child)) : child;
+        }),
+      },
+    };
 }
 
 // 先序遍历提交挂载

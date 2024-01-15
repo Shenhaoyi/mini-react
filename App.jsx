@@ -1,12 +1,17 @@
 import React from './core/React.js';
 
-// const App = React.createElement('div', { id: 'app' }, 'app');
-const App = <div id="app">app</div>;
+function Counter({ num }) {
+  return <div>count:{num}</div>;
+}
 
-// 查看 jsx 被编译结果
-// function test() {
-//   return <div id="app">app</div>;
-// }
-// console.log(test);
+function App() {
+  return (
+    <div id="app">
+      app
+      <Counter num={1}></Counter>
+      <Counter num={2}></Counter>
+    </div>
+  );
+}
 
 export default App;
