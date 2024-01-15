@@ -19,9 +19,28 @@ function createElement(type, props, ...children) {
   };
 }
 
+// 先序遍历提交挂载
+function commitFiber(fiber) {
+  if (!fiber) return;
+  fiber.parent.dom.appendChild(fiber.dom);
+  commitFiber(fiber.child);
+  commitFiber(fiber.sibling);
+}
+
+let root = null;
+function commitRoot() {
+  if (!root) return;
+  commitFiber(root.child);
+  root = null;
+}
+
 let nextUnitOfFiber = null;
 function fiberLoop() {
-  if (!nextUnitOfFiber) return;
+  if (!nextUnitOfFiber) {
+    // 统一提交
+    commitRoot();
+    return;
+  }
   requestIdleCallback((IdleDeadline) => {
     while (IdleDeadline.timeRemaining() > 0 && nextUnitOfFiber) {
       nextUnitOfFiber = performUnitOfFiber(nextUnitOfFiber);
@@ -31,7 +50,7 @@ function fiberLoop() {
 }
 
 function render(node, container) {
-  nextUnitOfFiber = {
+  nextUnitOfFiber = root = {
     type: null,
     props: {
       children: [node],
@@ -80,9 +99,8 @@ function initChildren(fiber) {
 
 function performUnitOfFiber(fiber) {
   if (!fiber.dom) {
-    const dom = (fiber.dom = createDom(fiber));
+    fiber.dom = createDom(fiber);
     updateProps(fiber);
-    fiber.parent.dom.appendChild(dom);
   }
 
   initChildren(fiber);
@@ -90,7 +108,7 @@ function performUnitOfFiber(fiber) {
   if (fiber.child) {
     return fiber.child;
   } else if (fiber.sibling) {
-    return sibling;
+    return fiber.sibling;
   } else if (fiber.parent) {
     return fiber.parent.sibling;
   } else {
