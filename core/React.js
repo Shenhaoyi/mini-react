@@ -60,19 +60,21 @@ function updateProps(fiber) {
 }
 
 function initChildren(fiber) {
-  let sibling = null;
+  let lastChild = null;
   fiber.props.children.forEach((child, index) => {
     const childFiber = {
       ...child,
       parent: fiber,
       child: null,
-      sibling,
+      sibling: null,
       dom: null,
     };
     if (index === 0) {
       fiber.child = childFiber;
+    } else {
+      lastChild.sibling = childFiber;
     }
-    sibling = childFiber;
+    lastChild = childFiber;
   });
 }
 
