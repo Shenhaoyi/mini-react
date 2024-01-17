@@ -78,10 +78,19 @@ function createDom(fiber) {
 
 function updateProps(fiber) {
   const { props, dom } = fiber;
-  // 2、添加属性
   Object.keys(props).forEach((key) => {
+    /*
+      分类
+        1、children props
+        2、事件绑定
+        3、一般 props
+    */
     if (key !== 'children') {
-      dom[key] = props[key];
+      if (key.startsWith('on')) {
+        dom.addEventListener(key.slice(2).toLowerCase(), props[key]);
+      } else {
+        dom[key] = props[key];
+      }
     }
   });
 }
