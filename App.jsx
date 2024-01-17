@@ -1,14 +1,18 @@
 import React from './core/React.js';
 
+let count = 1;
+let props = { id: 'shen' };
 function Counter({ num }) {
   const handleClick = () => {
-    console.log('+1');
+    count += num;
+    React.update();
+    props = {};
   };
   return (
-    <div>
-      count:{num}
+    <div {...props}>
+      count:{count}
       &nbsp;
-      <button onClick={handleClick}>+1</button>
+      <button onClick={handleClick}>+{num}</button>
     </div>
   );
 }

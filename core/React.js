@@ -1,10 +1,10 @@
 export const TEXT_NODE = 'TEXT_NODE';
 
-function createTextNode(text) {
+function createTextNode(textContent) {
   return {
     type: TEXT_NODE,
     props: {
-      text,
+      textContent,
       children: [],
     },
   };
@@ -25,10 +25,14 @@ function createElement(type, props, ...children) {
 // 先序遍历提交挂载
 function commitFiber(fiber) {
   if (!fiber) return;
-  if (fiber.dom /* function component 的 fiber 没有 dom */) {
-    let parent = fiber.parent;
-    while (!parent.dom) parent = parent.parent;
-    parent.dom.appendChild(fiber.dom);
+  if (fiber.effectTag === 'update') {
+    updateProps(fiber);
+  } else if (fiber.effectTag === 'placement') {
+    if (fiber.dom /* function component 的 fiber 没有 dom */) {
+      let parent = fiber.parent;
+      while (!parent.dom) parent = parent.parent;
+      parent.dom.appendChild(fiber.dom);
+    }
   }
 
   commitFiber(fiber.child);
@@ -36,9 +40,11 @@ function commitFiber(fiber) {
 }
 
 let root = null;
+let currentRoot; // alternate root
 function commitRoot() {
   if (!root) return;
   commitFiber(root.child);
+  currentRoot = root;
   root = null;
 }
 
@@ -73,23 +79,35 @@ function render(node, container) {
 
 function createDom(fiber) {
   const { type, props } = fiber;
-  return type === TEXT_NODE ? document.createTextNode(props.text) : document.createElement(type);
+  return type === TEXT_NODE ? document.createTextNode(props.textContent) : document.createElement(type);
 }
 
 function updateProps(fiber) {
-  const { props, dom } = fiber;
-  Object.keys(props).forEach((key) => {
-    /*
-      分类
-        1、children props
-        2、事件绑定
-        3、一般 props
-    */
-    if (key !== 'children') {
+  const { props: newProps, dom, alternate } = fiber;
+  const oldProps = alternate?.props || {};
+  const oldKeys = Object.keys(oldProps).filter((key) => key !== 'children');
+  const newKeys = Object.keys(newProps).filter((key) => key !== 'children');
+  // 1. 删除：老的有，新的没有
+  oldKeys.forEach((key) => {
+    if (!newKeys.includes(key)) {
+      dom.removeAttribute(key);
+    }
+  });
+  // 2. 全等判断：老的没有，新的有; 老的有，新的有
+  newKeys.forEach((key) => {
+    if (newProps[key] !== oldProps[key]) {
+      /*
+        分类
+          1、children props(上面过滤掉了)
+          2、事件绑定
+          3、一般 props
+      */
       if (key.startsWith('on')) {
-        dom.addEventListener(key.slice(2).toLowerCase(), props[key]);
+        const eventType = key.slice(2).toLowerCase();
+        dom.removeEventListener(eventType, oldProps[key]);
+        dom.addEventListener(eventType, newProps[key]);
       } else {
-        dom[key] = props[key];
+        dom[key] = newProps[key];
       }
     }
   });
@@ -97,20 +115,30 @@ function updateProps(fiber) {
 
 function initChildren(fiber, children) {
   let lastChild = null;
+  let oldFiber = fiber.alternate?.child;
   children.forEach((child, index) => {
+    const isSameType = oldFiber && child.type === oldFiber.type;
     const childFiber = {
       ...child,
       parent: fiber,
       child: null,
       sibling: null,
       dom: null,
+      alternate: oldFiber,
+      effectTag: 'placement',
     };
+    if (isSameType) {
+      // 更新节点
+      childFiber.dom = oldFiber.dom; // 沿用旧 dom，这样遍历到这个节点的时候，updateHostComponent 中就不会再创建 dom 了
+      childFiber.effectTag = 'update';
+    }
     if (index === 0) {
       fiber.child = childFiber;
     } else {
       lastChild.sibling = childFiber;
     }
     lastChild = childFiber;
+    oldFiber = oldFiber?.sibling;
   });
 }
 
@@ -147,7 +175,21 @@ function performUnitOfFiber(fiber) {
   }
 }
 
+function update() {
+  nextUnitOfFiber = root = {
+    type: null,
+    props: currentRoot.props,
+    parent: null,
+    child: null,
+    sibling: null,
+    dom: currentRoot.dom,
+    alternate: currentRoot,
+  };
+  fiberLoop();
+}
+
 export default {
   render,
+  update,
   createElement,
 };
