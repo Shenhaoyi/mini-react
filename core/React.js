@@ -39,13 +39,13 @@ function commitFiber(fiber) {
   commitFiber(fiber.sibling);
 }
 
-let root = null;
+let wipRoot = null; // work in progress
 let currentRoot; // alternate root
 function commitRoot() {
-  if (!root) return;
-  commitFiber(root.child);
-  currentRoot = root;
-  root = null;
+  if (!wipRoot) return;
+  commitFiber(wipRoot.child);
+  currentRoot = wipRoot;
+  wipRoot = null;
 }
 
 let nextUnitOfFiber = null;
@@ -64,7 +64,7 @@ function fiberLoop() {
 }
 
 function render(node, container) {
-  nextUnitOfFiber = root = {
+  nextUnitOfFiber = wipRoot = {
     type: null,
     props: {
       children: [node],
@@ -113,7 +113,7 @@ function updateProps(fiber) {
   });
 }
 
-function initChildren(fiber, children) {
+function reconcileChildren(fiber, children) {
   let lastChild = null;
   let oldFiber = fiber.alternate?.child;
   children.forEach((child, index) => {
@@ -144,14 +144,14 @@ function initChildren(fiber, children) {
 
 function updateFunctionComponent(fiber) {
   const children = [fiber.type(fiber.props)];
-  initChildren(fiber, children);
+  reconcileChildren(fiber, children);
 }
 function updateHostComponent(fiber) {
   if (!fiber.dom) {
     fiber.dom = createDom(fiber);
     updateProps(fiber);
   }
-  initChildren(fiber, fiber.props.children);
+  reconcileChildren(fiber, fiber.props.children);
 }
 
 function performUnitOfFiber(fiber) {
@@ -176,7 +176,7 @@ function performUnitOfFiber(fiber) {
 }
 
 function update() {
-  nextUnitOfFiber = root = {
+  nextUnitOfFiber = wipRoot = {
     type: null,
     props: currentRoot.props,
     parent: null,
