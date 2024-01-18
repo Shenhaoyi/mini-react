@@ -1,4 +1,5 @@
 import React from './core/React.js';
+import { SwitchChild } from './components/SwitchChild.jsx';
 
 let count = 1;
 let props = { id: 'shen' };
@@ -13,24 +14,6 @@ function Counter({ num }) {
       count:{count}
       &nbsp;
       <button onClick={handleClick}>+{num}</button>
-    </div>
-  );
-}
-
-let showBar = true;
-function SwitchChild() {
-  const Bar = <span>Bar</span>;
-  const Foo = function () {
-    return <div>Foo</div>;
-  };
-  const handleClick = () => {
-    showBar = !showBar;
-    React.update();
-  };
-  return (
-    <div>
-      <div>{showBar ? Bar : <Foo></Foo>}</div>
-      <button onClick={handleClick}>switch</button>
     </div>
   );
 }
