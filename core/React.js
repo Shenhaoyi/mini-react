@@ -1,3 +1,4 @@
+import { compareFiberChain, logFiberChain } from './help.js';
 export const TEXT_NODE = 'TEXT_NODE';
 
 function createTextNode(textContent) {
@@ -41,11 +42,25 @@ function commitFiber(fiber) {
 
 let wipRoot = null; // work in progress
 let currentRoot; // alternate root
+let deletions = [];
 function commitRoot() {
   if (!wipRoot) return;
+  deletions.forEach(deleteNode);
   commitFiber(wipRoot.child);
   currentRoot = wipRoot;
   wipRoot = null;
+  deletions = [];
+}
+
+function deleteNode(fiber) {
+  if (fiber.dom) {
+    fiber.parent.dom.removeChild(fiber.dom);
+  } else {
+    // 函数式组件 fiber 处理：卸载组件根节点，循环查找父节点
+    let parent = fiber.parent;
+    while (!parent.dom) parent = parent.parent;
+    parent.dom.removeChild(fiber.child.dom);
+  }
 }
 
 let nextUnitOfFiber = null;
@@ -133,6 +148,10 @@ function reconcileChildren(fiber, children) {
     } else {
       childFiber.dom = null;
       childFiber.effectTag = 'placement';
+      if (oldFiber) {
+        // 节点 type 不同
+        deletions.push(oldFiber);
+      }
     }
     if (index === 0) {
       fiber.child = childFiber;
