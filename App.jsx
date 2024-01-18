@@ -1,5 +1,6 @@
 import React from './core/React.js';
 import { SwitchChild } from './components/SwitchChild.jsx';
+import { RemoveChild } from './components/RemoveChild.jsx';
 
 let count = 1;
 let props = { id: 'shen' };
@@ -28,6 +29,8 @@ function App() {
       <hr />
       <h1>update children</h1>
       <SwitchChild></SwitchChild>
+      <h1>remove children</h1>
+      <RemoveChild></RemoveChild>
     </div>
   );
 }
