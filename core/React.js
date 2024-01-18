@@ -115,22 +115,24 @@ function updateProps(fiber) {
 
 function reconcileChildren(fiber, children) {
   let lastChild = null;
-  let oldFiber = fiber.alternate?.child;
+  const isSameType = fiber.alternate && fiber.type === fiber.alternate.type;
+  let oldFiber = isSameType ? fiber.alternate?.child : null; // 父节点类型相同才有必要比较子节点
   children.forEach((child, index) => {
-    const isSameType = oldFiber && child.type === oldFiber.type;
+    const isChildSameType = oldFiber && child.type === oldFiber.type;
     const childFiber = {
       ...child,
       parent: fiber,
       child: null,
       sibling: null,
-      dom: null,
       alternate: oldFiber,
-      effectTag: 'placement',
     };
-    if (isSameType) {
+    if (isChildSameType) {
       // 更新节点
       childFiber.dom = oldFiber.dom; // 沿用旧 dom，这样遍历到这个节点的时候，updateHostComponent 中就不会再创建 dom 了
       childFiber.effectTag = 'update';
+    } else {
+      childFiber.dom = null;
+      childFiber.effectTag = 'placement';
     }
     if (index === 0) {
       fiber.child = childFiber;
