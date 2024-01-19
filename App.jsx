@@ -9,7 +9,7 @@ function Counter({ num }) {
   const [bar, setBar] = React.useState('bar');
   const handleClick = () => {
     props = {};
-    setCount((i) => i + num);
+    setCount(count + 1);
     setBar((bar) => bar + 'bar');
   };
   return (
