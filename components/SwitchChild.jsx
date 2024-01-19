@@ -8,10 +8,12 @@ const Foo = function () {
   return <div>Foo</div>;
 };
 export function SwitchChild() {
-  const handleClick = () => {
-    showBar = !showBar;
-    React.update();
-  };
+  console.log('switch child');
+  const update = React.update();
+    const handleClick = () => {
+      showBar = !showBar;
+      update();
+    };
   return (
     <div>
       <div>{showBar ? Bar : <Foo></Foo>}</div>

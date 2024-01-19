@@ -4,9 +4,11 @@
 import React from '../core/React.js';
 let shouldRemove = false;
 export function RemoveChild() {
+  console.log('remove child');
+  const update = React.update();
   const handleClick = () => {
     shouldRemove = !shouldRemove;
-    React.update();
+    update();
   };
   return (
     <div>

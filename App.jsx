@@ -5,11 +5,13 @@ import { RemoveChild } from './components/RemoveChild.jsx';
 let count = 1;
 let props = { id: 'shen' };
 function Counter({ num }) {
-  const handleClick = () => {
-    count += num;
-    React.update();
-    props = {};
-  };
+  console.log('count');
+  const update = React.update();
+    const handleClick = () => {
+      count += num;
+      props = {};
+      update();
+    };
   return (
     <div {...props}>
       count:{count}

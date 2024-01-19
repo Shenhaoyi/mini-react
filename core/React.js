@@ -43,6 +43,7 @@ function commitFiber(fiber) {
 let wipRoot = null; // work in progress
 let currentRoot; // alternate root
 let deletions = [];
+let activeFCFiber = null; // 当前处理的函数式组件 fiber
 function commitRoot() {
   if (!wipRoot) return;
   deletions.forEach(deleteNode);
@@ -72,6 +73,11 @@ function fiberLoop() {
   }
   requestIdleCallback((IdleDeadline) => {
     while (IdleDeadline.timeRemaining() > 0 && nextUnitOfFiber) {
+      if (activeFCFiber?.alternate && activeFCFiber?.sibling?.type === nextUnitOfFiber?.type) {
+        nextUnitOfFiber = null;
+        activeFCFiber = null;
+        return;
+      }
       nextUnitOfFiber = performUnitOfFiber(nextUnitOfFiber);
     }
     fiberLoop();
@@ -168,6 +174,7 @@ function reconcileChildren(fiber, children) {
 }
 
 function updateFunctionComponent(fiber) {
+  activeFCFiber = fiber;
   const children = [fiber.type(fiber.props)];
   reconcileChildren(fiber, children);
 }
@@ -200,17 +207,18 @@ function performUnitOfFiber(fiber) {
   }
 }
 
+// 供函数式组件手动更新时调用
 function update() {
-  nextUnitOfFiber = wipRoot = {
-    type: null,
-    props: currentRoot.props,
-    parent: null,
-    child: null,
-    sibling: null,
-    dom: currentRoot.dom,
-    alternate: currentRoot,
+  const thisFCFiber = activeFCFiber;
+  return () => {
+    activeFCFiber = thisFCFiber;
+    nextUnitOfFiber = wipRoot = {
+      ...thisFCFiber,
+      child: null,
+      alternate: thisFCFiber,
+    };
+    fiberLoop();
   };
-  fiberLoop();
 }
 
 export default {
