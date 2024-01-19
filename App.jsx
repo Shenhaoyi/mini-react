@@ -10,7 +10,7 @@ function Counter({ num }) {
   const handleClick = () => {
     props = {};
     setCount(count + 1);
-    setBar((bar) => bar + 'bar');
+    setBar((bar) => 'bar');
   };
   return (
     <div {...props}>

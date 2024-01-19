@@ -243,6 +243,8 @@ function useState(initial) {
   stateHooks.push(stateHook);
   activeFCFiber.stateHooks = stateHooks; // stateHook 缓存在 fiber 上
   const setState = (action) => {
+    const eagerState = typeof action === 'function' ? action(stateHook.state) : action;
+    if (eagerState === stateHook.state) return;
     stateHook.queue.push(typeof action === 'function' ? action : () => action);
     // 数据更新之后更新组件视图, 有空闲时间才会更新，所以 setState 是可能多次调用而视图还没有更新的
     cachedUpdate();
