@@ -2,20 +2,22 @@ import React from './core/React.js';
 import { SwitchChild } from './components/SwitchChild.jsx';
 import { RemoveChild } from './components/RemoveChild.jsx';
 
-let count = 1;
 let props = { id: 'shen' };
 function Counter({ num }) {
   console.log('count');
-  const update = React.update();
-    const handleClick = () => {
-      count += num;
-      props = {};
-      update();
-    };
+  const [count, setCount] = React.useState(1);
+  const [bar, setBar] = React.useState('bar');
+  const handleClick = () => {
+    props = {};
+    setCount((i) => i + num);
+    setBar((bar) => bar + 'bar');
+  };
   return (
     <div {...props}>
       count:{count}
       &nbsp;
+      <hr></hr>
+      bar: {bar}
       <button onClick={handleClick}>+{num}</button>
     </div>
   );
@@ -27,7 +29,6 @@ function App() {
       app
       <hr />
       <Counter num={1}></Counter>
-      <Counter num={2}></Counter>
       <hr />
       <h1>update children</h1>
       <SwitchChild></SwitchChild>

@@ -76,7 +76,7 @@ function fiberLoop() {
       if (activeFCFiber?.alternate && activeFCFiber?.sibling?.type === nextUnitOfFiber?.type) {
         nextUnitOfFiber = null;
         activeFCFiber = null;
-        return;
+        break;
       }
       nextUnitOfFiber = performUnitOfFiber(nextUnitOfFiber);
     }
@@ -175,6 +175,7 @@ function reconcileChildren(fiber, children) {
 
 function updateFunctionComponent(fiber) {
   activeFCFiber = fiber;
+  resetStateHooks();
   const children = [fiber.type(fiber.props)];
   reconcileChildren(fiber, children);
 }
@@ -221,8 +222,37 @@ function update() {
   };
 }
 
+let stateHooks = [];
+let stateHookIndex = 0;
+function resetStateHooks() {
+  stateHooks = [];
+  stateHookIndex = 0;
+}
+function useState(initial) {
+  const cachedUpdate = update();
+  const oldStateHooks = activeFCFiber.alternate?.stateHooks;
+  const stateHook = {
+    state: oldStateHooks ? oldStateHooks[stateHookIndex].state : initial,
+    queue: oldStateHooks ? oldStateHooks[stateHookIndex].queue : [],
+  };
+  stateHook.queue.forEach((action) => {
+    stateHook.state = action(stateHook.state);
+  });
+  stateHook.queue = [];
+  stateHookIndex++;
+  stateHooks.push(stateHook);
+  activeFCFiber.stateHooks = stateHooks; // stateHook 缓存在 fiber 上
+  const setState = (action) => {
+    stateHook.queue.push(action);
+    // 数据更新之后更新组件视图, 有空闲时间才会更新，所以 setState 是可能多次调用而视图还没有更新的
+    cachedUpdate();
+  };
+  return [stateHook.state, setState];
+}
+
 export default {
   render,
   update,
+  useState,
   createElement,
 };
