@@ -48,9 +48,27 @@ function commitRoot() {
   if (!wipRoot) return;
   deletions.forEach(deleteNode);
   commitFiber(wipRoot.child);
+  commitEffectHook(wipRoot);
   currentRoot = wipRoot;
   wipRoot = null;
   deletions = [];
+}
+
+function commitEffectHook(fiber) {
+  if (!fiber) return;
+  if (fiber.effectHook) {
+    if (!fiber.alternate) {
+      // 初始化时，一定执行
+      fiber.effectHook.setup();
+    } else {
+      // 组件 update时，判断依赖是否有变化
+      const oldDeps = fiber.alternate.effectHook.deps;
+      const needUpdate = fiber.effectHook.deps.some((dep, index) => dep !== oldDeps[index]);
+      if (needUpdate) fiber.effectHook.setup();
+    }
+  }
+  commitEffectHook(fiber.child);
+  commitEffectHook(fiber.sibling);
 }
 
 function deleteNode(fiber) {
@@ -252,9 +270,19 @@ function useState(initial) {
   return [stateHook.state, setState];
 }
 
+function useEffect(setup, deps) {
+  const effectHook = {
+    setup,
+    deps,
+    // cleanup,
+  };
+  activeFCFiber.effectHook = effectHook;
+}
+
 export default {
   render,
   update,
   useState,
   createElement,
+  useEffect,
 };

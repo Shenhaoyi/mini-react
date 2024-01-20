@@ -12,6 +12,9 @@ function Counter({ num }) {
     setCount(count + 1);
     setBar((bar) => 'bar');
   };
+  React.useEffect(() => {
+    console.log('use effect');
+  }, [bar]);
   return (
     <div {...props}>
       count:{count}
