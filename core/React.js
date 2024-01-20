@@ -56,15 +56,19 @@ function commitRoot() {
 
 function commitEffectHook(fiber) {
   if (!fiber) return;
-  if (fiber.effectHook) {
+  if (fiber.effectHooks) {
     if (!fiber.alternate) {
       // 初始化时，一定执行
-      fiber.effectHook.setup();
+      fiber.effectHooks.forEach((effectHook) => {
+        effectHook.setup();
+      });
     } else {
       // 组件 update时，判断依赖是否有变化
-      const oldDeps = fiber.alternate.effectHook.deps;
-      const needUpdate = fiber.effectHook.deps.some((dep, index) => dep !== oldDeps[index]);
-      if (needUpdate) fiber.effectHook.setup();
+      fiber.effectHooks.forEach((effectHook, index) => {
+        const oldDeps = fiber.alternate.effectHooks[index].deps;
+        const needUpdate = effectHook.deps.some((dep, i) => dep !== oldDeps[i]);
+        if (needUpdate) effectHook.setup();
+      });
     }
   }
   commitEffectHook(fiber.child);
@@ -194,6 +198,8 @@ function reconcileChildren(fiber, children) {
 function updateFunctionComponent(fiber) {
   activeFCFiber = fiber;
   resetStateHooks();
+  activeFCFiber.effectHooks = []; // 初始化 effectHook 数组
+
   const children = [fiber.type(fiber.props)];
   reconcileChildren(fiber, children);
 }
@@ -276,7 +282,7 @@ function useEffect(setup, deps) {
     deps,
     // cleanup,
   };
-  activeFCFiber.effectHook = effectHook;
+  activeFCFiber.effectHooks.push(effectHook);
 }
 
 export default {
