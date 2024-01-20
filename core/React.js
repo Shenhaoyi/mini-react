@@ -48,31 +48,49 @@ function commitRoot() {
   if (!wipRoot) return;
   deletions.forEach(deleteNode);
   commitFiber(wipRoot.child);
-  commitEffectHook(wipRoot);
+  commitEffectHook();
   currentRoot = wipRoot;
   wipRoot = null;
   deletions = [];
 }
 
-function commitEffectHook(fiber) {
-  if (!fiber) return;
-  if (fiber.effectHooks) {
-    if (!fiber.alternate) {
-      // 初始化时，一定执行
-      fiber.effectHooks.forEach((effectHook) => {
-        effectHook.setup();
-      });
-    } else {
-      // 组件 update时，判断依赖是否有变化
-      fiber.effectHooks.forEach((effectHook, index) => {
-        const oldDeps = fiber.alternate.effectHooks[index].deps;
-        const needUpdate = effectHook.deps.some((dep, i) => dep !== oldDeps[i]);
-        if (needUpdate) effectHook.setup();
+function commitEffectHook() {
+  function run(fiber) {
+    if (!fiber) return;
+    if (fiber.effectHooks) {
+      if (!fiber.alternate) {
+        // 初始化时，一定执行
+        fiber.effectHooks.forEach((effectHook) => {
+          effectHook.cleanup = effectHook.setup();
+        });
+      } else {
+        // 组件 update时，判断依赖是否有变化
+        fiber.effectHooks.forEach((effectHook, index) => {
+          const oldDeps = fiber.alternate.effectHooks[index].deps;
+          const needUpdate = effectHook.deps.some((dep, i) => dep !== oldDeps[i]);
+          if (needUpdate) effectHook.cleanup = effectHook.setup();
+        });
+      }
+    }
+    run(fiber.child);
+    run(fiber.sibling);
+  }
+  function runCleanup(fiber) {
+    if (!fiber) return;
+    if (fiber.alternate?.effectHooks) {
+      fiber.alternate.effectHooks.forEach((effectHook) => {
+        if (effectHook.deps.length) {
+          // 有依赖时才执行
+          effectHook.cleanup?.();
+        }
       });
     }
+    runCleanup(fiber.child);
+    runCleanup(fiber.sibling);
   }
-  commitEffectHook(fiber.child);
-  commitEffectHook(fiber.sibling);
+
+  runCleanup(wipRoot);
+  run(wipRoot);
 }
 
 function deleteNode(fiber) {
@@ -280,7 +298,7 @@ function useEffect(setup, deps) {
   const effectHook = {
     setup,
     deps,
-    // cleanup,
+    cleanup: undefined,
   };
   activeFCFiber.effectHooks.push(effectHook);
 }

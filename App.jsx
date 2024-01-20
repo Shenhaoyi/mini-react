@@ -14,9 +14,15 @@ function Counter({ num }) {
   };
   React.useEffect(() => {
     console.log('use effect: count');
+    return () => {
+      console.log('cleanup count');
+    };
   }, [count]);
   React.useEffect(() => {
     console.log('use effect: bar');
+    return () => {
+      console.log('cleanup bar');
+    };
   }, [bar]);
   return (
     <div {...props}>
