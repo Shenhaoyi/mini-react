@@ -114,6 +114,7 @@ function fiberLoop() {
   requestIdleCallback((IdleDeadline) => {
     while (IdleDeadline.timeRemaining() > 0 && nextUnitOfFiber) {
       if (activeFCFiber?.alternate && activeFCFiber?.sibling?.type === nextUnitOfFiber?.type) {
+        // 非首次渲染 且 当前处理的函数式组件边界判断（下一个处理节点是函数式组件的兄弟节点，则停止）
         nextUnitOfFiber = null;
         activeFCFiber = null;
         break;
